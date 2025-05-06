@@ -44,7 +44,7 @@ fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer
                 println!("Error reading stream data: {:?}", e);
             }
         }
-        if master_buffer.ends_with(b"/r/n/r/n") {
+        if master_buffer.ends_with(b"\r\n\r\n") {
             break;
         }
     }
