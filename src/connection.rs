@@ -8,11 +8,14 @@ pub fn handle_client(stream: &mut TcpStream) {
     let mut master_buffer: Vec<u8> = vec![];
     let mut scratch: [u8; 512] = [0u8; 512];
 
+    collect_stream(stream, &mut scratch, &mut master_buffer);
+
+fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
     loop {
         if master_buffer.len() >= 8000 {
             break;
         }
-        let bytes_read = stream.read(&mut scratch);
+        let bytes_read = stream.read(scratch);
         match bytes_read {
             Ok(n) => {
                 if n == 0 {
@@ -28,6 +31,6 @@ pub fn handle_client(stream: &mut TcpStream) {
             break;
         }
     }
-    let buffer_as_chars: Vec<char> = master_buffer.iter().map(|b| *b as char).collect();
-    println!("Buffer: {:?}", buffer_as_chars[0..buffer_as_chars.len()].iter().collect::<String>())
+
 }
+
