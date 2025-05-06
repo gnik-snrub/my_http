@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Read, net::TcpStream};
+use std::{collections::HashMap, io::{Read, Write}, net::TcpStream};
 
 
 pub fn handle_client(stream: &mut TcpStream) {
@@ -19,6 +19,19 @@ pub fn handle_client(stream: &mut TcpStream) {
 
             println!("Request: {:?}", req);
             println!("Headers: {:?}", headers);
+            if req.method == "GET".to_string() && req.path == "/".to_string() {
+                let response = b"HTTP/1.1 200 OK\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello\n";
+                let result = stream.write_all(response);
+                match result {
+                    Ok(_) => {
+                        println!("Response sent...");
+                    }
+                    Err(e) => {
+                        println!("Error sending response: {:?}", e);
+                    }
+                }
+                let _ = stream.flush();
+            }
         },
         None => {
             println!("Error in request, disconnecting...");
@@ -48,7 +61,6 @@ fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer
             break;
         }
     }
-
 }
 
 #[derive(Debug)]
