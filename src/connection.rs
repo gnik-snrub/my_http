@@ -83,7 +83,7 @@ fn parse_request(bytes: &Vec<u8>) -> Option<(usize, Request)> {
 fn generate_headers(header_string: String) -> HashMap<String, String> {
     let mut header_map: HashMap<String, String> = HashMap::new();
     for item in header_string.split("\r\n") {
-        let pair: Vec<&str> = item.split(":").collect();
+        let pair: Vec<&str> = item.split(": ").collect();
         if pair.len() > 1 {
             header_map.insert(pair[0].to_string(), pair[1].to_string());
         }
