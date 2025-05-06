@@ -10,6 +10,17 @@ pub fn handle_client(stream: &mut TcpStream) {
 
     collect_stream(stream, &mut scratch, &mut master_buffer);
 
+    let request = parse_request(&master_buffer);
+    match request {
+        Some((header_start_idx, req)) => {
+            println!("Request: {:?}", req);
+        },
+        None => {
+            println!("Error in request, disconnecting...");
+            return;
+        }
+    }
+}
 fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
     loop {
         if master_buffer.len() >= 8000 {
@@ -32,5 +43,34 @@ fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer
         }
     }
 
+}
+
+#[derive(Debug)]
+struct Request {
+    method: String,
+    path: String,
+    version: String,
+}
+
+fn parse_request(bytes: &Vec<u8>) -> Option<(usize, Request)> {
+    for i in 1..bytes.len() {
+        if bytes[i - 1] == b"\r"[0] && bytes[i] == b"\n"[0] {
+            let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
+            let req_string = req_chars[0..req_chars.len()].iter().collect::<String>();
+            let req_vec: Vec<&str> = req_string.split(" ").collect();
+            let request = Request {
+                method: req_vec[0].to_string(),
+                path: req_vec[1].to_string(),
+                version: req_vec[2].to_string(),
+            };
+
+            if !request.version.starts_with("HTTP/1.") {
+                return None
+            }
+
+            return Some((i + 1, request))
+        }
+    }
+    None
 }
 
