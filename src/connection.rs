@@ -1,4 +1,4 @@
-use std::{io::Read, net::TcpStream};
+use std::{collections::HashMap, io::Read, net::TcpStream};
 
 
 pub fn handle_client(stream: &mut TcpStream) {
@@ -13,7 +13,12 @@ pub fn handle_client(stream: &mut TcpStream) {
     let request = parse_request(&master_buffer);
     match request {
         Some((header_start_idx, req)) => {
+            let header_chars: Vec<char> = master_buffer[header_start_idx..].iter().map(|b| *b as char).collect();
+            let header_string = header_chars[0..header_chars.len()].iter().collect::<String>();
+            let headers = generate_headers(header_string);
+
             println!("Request: {:?}", req);
+            println!("Headers: {:?}", headers);
         },
         None => {
             println!("Error in request, disconnecting...");
@@ -21,6 +26,7 @@ pub fn handle_client(stream: &mut TcpStream) {
         }
     }
 }
+
 fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
     loop {
         if master_buffer.len() >= 8000 {
@@ -74,3 +80,13 @@ fn parse_request(bytes: &Vec<u8>) -> Option<(usize, Request)> {
     None
 }
 
+fn generate_headers(header_string: String) -> HashMap<String, String> {
+    let mut header_map: HashMap<String, String> = HashMap::new();
+    for item in header_string.split("\r\n") {
+        let pair: Vec<&str> = item.split(":").collect();
+        if pair.len() > 1 {
+            header_map.insert(pair[0].to_string(), pair[1].to_string());
+        }
+    }
+    header_map
+}
