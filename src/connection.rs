@@ -21,16 +21,7 @@ pub fn handle_client(stream: &mut TcpStream) {
             println!("Headers: {:?}", headers);
             if req.method == "GET".to_string() && req.path == "/".to_string() {
                 let response = b"HTTP/1.1 200 OK\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello\n";
-                let result = stream.write_all(response);
-                match result {
-                    Ok(_) => {
-                        println!("Response sent...");
-                    }
-                    Err(e) => {
-                        println!("Error sending response: {:?}", e);
-                    }
-                }
-                let _ = stream.flush();
+                send_response(stream, response.to_vec());
             }
         },
         None => {
@@ -101,4 +92,17 @@ fn generate_headers(header_string: String) -> HashMap<String, String> {
         }
     }
     header_map
+}
+
+fn send_response(stream: &mut TcpStream ,res_bytes: Vec<u8>) {
+    let result = stream.write_all(&res_bytes);
+    match result {
+        Ok(_) => {
+            println!("Response sent...");
+        }
+        Err(e) => {
+            println!("Error sending response: {:?}", e);
+        }
+    }
+    let _ = stream.flush();
 }
