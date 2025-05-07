@@ -19,10 +19,17 @@ pub fn handle_client(stream: &mut TcpStream) {
 
             println!("Request: {:?}", req);
             println!("Headers: {:?}", headers);
-            if req.method == "GET".to_string() && req.path == "/".to_string() {
+
+            if req.path != "/".to_string() {
+                let response = b"HTTP/1.1 404 Not Found\r\n\r\n404 Not Found\n";
+                send_response(stream, response.to_vec());
+            }
+
+            if req.method == "GET".to_string() {
                 let response = b"HTTP/1.1 200 OK\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello\n";
                 send_response(stream, response.to_vec());
             }
+
         },
         None => {
             println!("Error in request, disconnecting...");
