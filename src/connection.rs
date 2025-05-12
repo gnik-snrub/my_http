@@ -164,3 +164,31 @@ enum StatusCode {
     NotFound,
 }
 
+impl Response {
+    fn new(status: StatusCode, headers: HashMap<String, String>, body: Vec<u8>) -> Response {
+        Response { status , headers, body }
+    }
+
+    fn not_found() -> Response {
+        Response { status: StatusCode::NotFound, headers: HashMap::new(), body: Vec::from(b"404 Not Found") }
+    }
+
+    fn finalize(&self) -> Vec<u8> {
+        let mut buffer = String::from("HTTP/1.1 ");
+        match &self.status {
+            StatusCode::Ok => {
+                buffer += "200 OK\r\n";
+            }
+            StatusCode::NotFound => {
+                buffer += "404 Not Found\r\n";
+            }
+        }
+        for (key, val) in self.headers.iter() {
+            buffer += format!("{}: {}\r\n", key, val).as_str();
+        }
+        buffer += "\r\n";
+        let mut bytes = buffer.into_bytes();
+        bytes.extend_from_slice(&self.body);
+        bytes
+    }
+}
