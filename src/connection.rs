@@ -180,6 +180,25 @@ fn generate_headers(master_buffer: &mut Vec<u8>, idx: &mut usize) -> HashMap<Str
     header_map
 }
 
+fn generate_body(length: Option<&String>, master_buffer: &mut Vec<u8>, idx: usize) -> Vec<u8>{
+    match length {
+        Some(len) => {
+            let parsed = len.parse::<usize>();
+            let length = if parsed.is_ok() {
+                parsed.unwrap()
+            } else {
+                0
+            };
+            let received_content: Vec<u8> = master_buffer[idx..idx + length].to_vec();
+            return received_content;
+        },
+        None => {
+            vec![]
+        }
+    }
+}
+
+fn send_response(stream: &mut TcpStream, res_bytes: Vec<u8>) {
     let result = stream.write_all(&res_bytes);
     match result {
         Ok(_) => {
