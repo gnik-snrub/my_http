@@ -92,12 +92,22 @@ fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer
 
 #[derive(Debug)]
 struct Request {
-    method: String,
+    method: Method,
     path: String,
     version: String,
+    query: HashMap<String, String>,
+    headers: HashMap<String, String>,
+    body: Vec<u8>,
 }
 
 fn parse_request(bytes: &Vec<u8>) -> Option<(usize, Request)> {
+#[derive(Debug, PartialEq)]
+enum Method {
+    GET,
+    POST,
+    ERROR,
+}
+
     for i in 1..bytes.len() {
         if bytes[i - 1] == b"\r"[0] && bytes[i] == b"\n"[0] {
             let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
@@ -142,3 +152,15 @@ fn send_response(stream: &mut TcpStream ,res_bytes: Vec<u8>) {
     }
     let _ = stream.flush();
 }
+
+struct Response {
+    status: StatusCode,
+    headers: HashMap<String, String>,
+    body: Vec<u8>,
+}
+
+enum StatusCode {
+    Ok,
+    NotFound,
+}
+
