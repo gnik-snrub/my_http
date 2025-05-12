@@ -10,48 +10,14 @@ pub fn handle_client(stream: &mut TcpStream) {
 
     collect_stream(stream, &mut scratch, &mut master_buffer);
 
-    let request = parse_request(&master_buffer);
-    match request {
-        Some((mut idx, req)) => {
-            let mut header_chars = vec![];
-            //let header_chars: Vec<char> = master_buffer[header_start_idx..].iter().map(|b| *b as char).collect();
-            while !header_chars.ends_with(&['\r', '\n', '\r', '\n']) {
-                header_chars.push(master_buffer[idx] as char);
-                idx += 1;
-            }
-            let header_string = header_chars[0..header_chars.len()].iter().collect::<String>();
-            let headers = generate_headers(header_string);
+    let (mut idx, mut req) = parse_request(&master_buffer);
+    req.headers = generate_headers(&mut master_buffer, &mut idx);
+    req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
 
-            println!("Request: {:?}", req);
-            println!("Headers: {:?}", headers);
-            if req.path != "/".to_string() {
-                let response = b"HTTP/1.1 404 Not Found\r\n\r\n404 Not Found\n";
-                send_response(stream, response.to_vec());
-                return;
-            }
+    let response = router(req);
+    send_response(stream, response.finalize().to_vec());
+}
 
-            if req.method == "GET".to_string() {
-                let response = b"HTTP/1.1 200 OK\r\nContent-Length: 6\r\nConnection: close\r\n\r\nHello\n";
-                send_response(stream, response.to_vec());
-                return;
-            }
-
-            if req.method == "POST".to_string() {
-                match headers.get("Content-Length") {
-                    Some(len) => {
-                        let parsed = len.parse::<usize>();
-                        let length = if parsed.is_ok() {
-                            parsed.unwrap()
-                        } else {
-                            0
-                        };
-                        let received_content = &master_buffer[idx..idx + length];
-                        let body = received_content.iter().map(|b| *b as char).collect::<String>();
-                        let response = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}\n", body.len() + 1, body).into_bytes();
-                        send_response(stream, response);
-                        return;
-                    }
-                    None => {
 fn router(req: Request) -> Response {
     match (&req.method, req.path.as_str()) {
         (Method::GET, "/")      => handle_root_get(req),
@@ -60,19 +26,10 @@ fn router(req: Request) -> Response {
     }
 }
 
-                    }
-                }
-            }
 fn handle_root_get(req: Request) -> Response {
     Response::new(StatusCode::Ok, req.headers, Vec::from(b"Hello"))
 }
 
-        },
-        None => {
-            println!("Error in request, disconnecting...");
-            return;
-        }
-    }
 fn handle_root_post(req: Request) -> Response {
     Response::new(StatusCode::Ok, req.headers, req.body)
 }
