@@ -161,7 +161,15 @@ fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
     return (0, default_request);
 }
 
-fn generate_headers(header_string: String) -> HashMap<String, String> {
+fn generate_headers(master_buffer: &mut Vec<u8>, idx: &mut usize) -> HashMap<String, String> {
+    let mut header_chars = vec![];
+
+    while !header_chars.ends_with(&['\r', '\n', '\r', '\n']) {
+        header_chars.push(master_buffer[*idx] as char);
+        *idx += 1;
+    }
+    let header_string = header_chars[0..header_chars.len()].iter().collect::<String>();
+
     let mut header_map: HashMap<String, String> = HashMap::new();
     for item in header_string.split("\r\n") {
         let pair: Vec<&str> = item.split(": ").collect();
@@ -172,7 +180,6 @@ fn generate_headers(header_string: String) -> HashMap<String, String> {
     header_map
 }
 
-fn send_response(stream: &mut TcpStream ,res_bytes: Vec<u8>) {
     let result = stream.write_all(&res_bytes);
     match result {
         Ok(_) => {
