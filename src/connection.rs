@@ -52,10 +52,20 @@ pub fn handle_client(stream: &mut TcpStream) {
                         return;
                     }
                     None => {
+fn router(req: Request) -> Response {
+    match (&req.method, req.path.as_str()) {
+        (Method::GET, "/")      => handle_root_get(req),
+        (Method::POST, "/")     => handle_root_post(req),
+        _                       => Response::not_found()
+    }
+}
 
                     }
                 }
             }
+fn handle_root_get(req: Request) -> Response {
+    Response::new(StatusCode::Ok, req.headers, Vec::from(b"Hello"))
+}
 
         },
         None => {
@@ -63,6 +73,8 @@ pub fn handle_client(stream: &mut TcpStream) {
             return;
         }
     }
+fn handle_root_post(req: Request) -> Response {
+    Response::new(StatusCode::Ok, req.headers, req.body)
 }
 
 fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
