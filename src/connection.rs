@@ -100,7 +100,6 @@ struct Request {
     body: Vec<u8>,
 }
 
-fn parse_request(bytes: &Vec<u8>) -> Option<(usize, Request)> {
 #[derive(Debug, PartialEq)]
 enum Method {
     GET,
@@ -108,25 +107,58 @@ enum Method {
     ERROR,
 }
 
+fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
+    let default_request = Request {
+        method: Method::ERROR,
+        path: "".to_string(),
+        version: "".to_string(),
+        query: HashMap::new(),
+        headers: HashMap::new(),
+        body: vec![],
+    };
+
     for i in 1..bytes.len() {
         if bytes[i - 1] == b"\r"[0] && bytes[i] == b"\n"[0] {
             let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
             let req_string = req_chars[0..req_chars.len()].iter().collect::<String>();
-            let req_vec: Vec<&str> = req_string.split(" ").collect();
+            let query_split: Vec<&str> = req_string.split("=").collect();
+            let req_vec: Vec<&str> = query_split[0].split(" ").collect();
+            let method = match req_vec[0] {
+                "GET" => Method::GET,
+                "POST" => Method::POST,
+                _ => {
+                    println!("{}", req_vec[0]);
+                    Method::GET
+                }
+            };
+            let mut query_map: HashMap<String, String> = HashMap::new();
+            if query_split.len() > 1 {
+                for query in query_split[1].split("&") {
+                    let query_segments: Vec<&str> = query.split("=").collect();
+                    if !query_segments.len() > 1 {
+                        query_map.insert(query_segments[0].to_string(), "".to_string());
+                        continue;
+                    }
+                    query_map.insert(query_segments[0].to_string(), query_segments[1].to_string());
+                }
+            }
             let request = Request {
-                method: req_vec[0].to_string(),
+                method,
                 path: req_vec[1].to_string(),
                 version: req_vec[2].to_string(),
+                query: query_map,
+                headers: HashMap::new(),
+                body: vec![],
             };
 
             if !request.version.starts_with("HTTP/1.") {
-                return None
+                return (i + 1, default_request);
             }
 
-            return Some((i + 1, request))
+            return (i + 1, request)
         }
     }
-    None
+    return (0, default_request);
 }
 
 fn generate_headers(header_string: String) -> HashMap<String, String> {
