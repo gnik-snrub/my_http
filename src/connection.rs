@@ -1,5 +1,5 @@
 use std::{collections::HashMap, io::{Read, Write}, net::TcpStream};
-
+use serde::Serialize;
 
 pub fn handle_client(stream: &mut TcpStream) {
     println!("Hello world");
@@ -200,7 +200,52 @@ impl Response {
         Response { status: StatusCode::NotFound, headers: HashMap::new(), body: Vec::from(b"404 Not Found") }
     }
 
-    fn finalize(&self) -> Vec<u8> {
+    fn text(mut self, body: &str) -> Response {
+        self.headers.insert("content-type".to_string(), "text/plain; charset=utf-8".to_string());
+        self.body = body.bytes().collect();
+        self
+    }
+
+    fn html(mut self, body: &str) -> Response {
+        self.headers.insert("content-type".to_string(), "text/html; charset=utf-8".to_string());
+        self.body = body.bytes().collect();
+        self
+    }
+
+    fn json<T: Serialize>(mut self, json: &T) -> Response {
+        self.headers.insert("content-type".to_string(), "application/json".to_string());
+        self.body = match serde_json::to_vec(json) {
+            Ok(ok) => ok,
+            Err(_) => {
+                self.headers.insert("x-serialize-error".to_string(), true.to_string());
+                b"{\"Error\": \"Could not serialize JSON\"}".to_vec()
+            },
+        };
+        self
+    }
+
+    fn status(mut self, status: u16) -> Response {
+        self.status = match status {
+            200 => StatusCode::Ok,
+            404 => StatusCode::NotFound,
+            _ => StatusCode::NotFound,
+        };
+        self
+    }
+
+    fn header(mut self, key: String, value: String) -> Response {
+        let unauthorized = [":", "\r", "\n"];
+        if !key.find(":").is_none() && !key.find("\r").is_none() && !key.find("\n").is_none() {
+            println!("Error: Invalid header entered");
+            return self
+        }
+        let lower = key.trim().to_lowercase();
+        self.headers.insert(lower, value);
+        self
+    }
+
+    fn finalize(&mut self) -> Vec<u8> {
+        self.headers.insert("Content-Length".to_string(), self.body.len().to_string());
         let mut buffer = String::from("HTTP/1.1 ");
         match &self.status {
             StatusCode::Ok => {
