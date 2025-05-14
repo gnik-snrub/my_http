@@ -14,7 +14,7 @@ pub fn handle_client(stream: &mut TcpStream) {
     req.headers = generate_headers(&mut master_buffer, &mut idx);
     req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
 
-    let response = router(req);
+    let mut response = router(req);
     send_response(stream, response.finalize().to_vec());
 }
 
@@ -26,12 +26,12 @@ fn router(req: Request) -> Response {
     }
 }
 
-fn handle_root_get(req: Request) -> Response {
-    Response::new(StatusCode::Ok, req.headers, Vec::from(b"Hello"))
+fn handle_root_get(_req: Request) -> Response {
+    Response::new().status(200).text(&"Hello")
 }
 
 fn handle_root_post(req: Request) -> Response {
-    Response::new(StatusCode::Ok, req.headers, req.body)
+    Response::new().status(200).text(&req.body)
 }
 
 fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
@@ -192,17 +192,17 @@ enum StatusCode {
 }
 
 impl Response {
-    fn new(status: StatusCode, headers: HashMap<String, String>, body: Vec<u8>) -> Response {
-        Response { status , headers, body }
+    fn new() -> Response {
+        Response { status: StatusCode::NotFound, headers: HashMap::new(), body: vec![] }
     }
 
     fn not_found() -> Response {
         Response { status: StatusCode::NotFound, headers: HashMap::new(), body: Vec::from(b"404 Not Found") }
     }
 
-    fn text(mut self, body: &str) -> Response {
+    fn text<T: AsRef<[u8]>>(mut self, body: &T) -> Response {
         self.headers.insert("content-type".to_string(), "text/plain; charset=utf-8".to_string());
-        self.body = body.bytes().collect();
+        self.body = body.as_ref().to_vec();
         self
     }
 
@@ -234,7 +234,6 @@ impl Response {
     }
 
     fn header(mut self, key: String, value: String) -> Response {
-        let unauthorized = [":", "\r", "\n"];
         if !key.find(":").is_none() && !key.find("\r").is_none() && !key.find("\n").is_none() {
             println!("Error: Invalid header entered");
             return self
