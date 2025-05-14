@@ -90,8 +90,7 @@ fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
         if bytes[i - 1] == b"\r"[0] && bytes[i] == b"\n"[0] {
             let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
             let req_string = req_chars[0..req_chars.len()].iter().collect::<String>();
-            let query_split: Vec<&str> = req_string.split("=").collect();
-            let req_vec: Vec<&str> = query_split[0].split(" ").collect();
+            let req_vec: Vec<&str> = req_string.split(" ").collect();
             let method = match req_vec[0] {
                 "GET" => Method::GET,
                 "POST" => Method::POST,
@@ -100,25 +99,30 @@ fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
                     Method::GET
                 }
             };
+            let path_query_split: Vec<&str> = req_vec[1].split("?").collect();
+            let path = path_query_split[0].to_string();
             let mut query_map: HashMap<String, String> = HashMap::new();
-            if query_split.len() > 1 {
-                for query in query_split[1].split("&") {
+            if path_query_split.len() > 1 {
+                for query in path_query_split[1].split("&") {
                     let query_segments: Vec<&str> = query.split("=").collect();
-                    if !query_segments.len() > 1 {
+                    if query_segments.len() <= 1 {
                         query_map.insert(query_segments[0].to_string(), "".to_string());
                         continue;
                     }
                     query_map.insert(query_segments[0].to_string(), query_segments[1].to_string());
                 }
             }
+
             let request = Request {
                 method,
-                path: req_vec[1].to_string(),
+                path,
                 version: req_vec[2].to_string(),
                 query: query_map,
                 headers: HashMap::new(),
                 body: vec![],
             };
+
+            println!("Request: {:?}", request);
 
             if !request.version.starts_with("HTTP/1.") {
                 return (i + 1, default_request);
