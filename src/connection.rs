@@ -10,11 +10,18 @@ pub fn handle_client(stream: &mut TcpStream) {
 
     collect_stream(stream, &mut scratch, &mut master_buffer);
 
-    let (mut idx, mut req) = parse_request(&master_buffer);
-    req.headers = generate_headers(&mut master_buffer, &mut idx);
-    req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
+    let parse_result = parse_request(&master_buffer);
+    let mut response = match parse_result {
+        Ok((mut idx, mut req)) => {
+            req.headers = generate_headers(&mut master_buffer, &mut idx);
+            req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
 
-    let mut response = router(req);
+            router(req)
+        }
+        Err(_) => {
+            Response::new().status(StatusCode::BadRequest)
+        }
+    };
     send_response(stream, response.finalize().to_vec());
 }
 
@@ -76,16 +83,11 @@ enum Method {
     ERROR,
 }
 
-fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
-    let default_request = Request {
-        method: Method::ERROR,
-        path: "".to_string(),
-        version: "".to_string(),
-        query: HashMap::new(),
-        headers: HashMap::new(),
-        body: vec![],
-    };
+enum ParseError {
+    BadRequest,
+}
 
+fn parse_request(bytes: &Vec<u8>) -> Result<(usize, Request), ParseError> {
     for i in 1..bytes.len() {
         if bytes[i - 1] == b"\r"[0] && bytes[i] == b"\n"[0] {
             let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
@@ -94,6 +96,8 @@ fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
             let method = match req_vec[0] {
                 "GET" => Method::GET,
                 "POST" => Method::POST,
+                "PUT" => Method::PUT,
+                "DELETE" => Method::DELETE,
                 _ => {
                     println!("{}", req_vec[0]);
                     Method::GET
@@ -122,16 +126,14 @@ fn parse_request(bytes: &Vec<u8>) -> (usize, Request) {
                 body: vec![],
             };
 
-            println!("Request: {:?}", request);
-
             if !request.version.starts_with("HTTP/1.") {
-                return (i + 1, default_request);
+                return Err(ParseError::BadRequest);
             }
 
-            return (i + 1, request)
+            return Ok((i + 1, request))
         }
     }
-    return (0, default_request);
+    return Err(ParseError::BadRequest);
 }
 
 fn generate_headers(master_buffer: &mut Vec<u8>, idx: &mut usize) -> HashMap<String, String> {
