@@ -233,12 +233,8 @@ impl Response {
         self
     }
 
-    fn status(mut self, status: u16) -> Response {
-        self.status = match status {
-            200 => StatusCode::Ok,
-            404 => StatusCode::NotFound,
-            _ => StatusCode::NotFound,
-        };
+    fn status(mut self, status: StatusCode) -> Response {
+        self.status = status;
         self
     }
 
