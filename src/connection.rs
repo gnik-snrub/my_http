@@ -193,8 +193,11 @@ struct Response {
 }
 
 enum StatusCode {
-    Ok,
-    NotFound,
+    Ok,                     // 200
+    BadRequest,             // 400
+    NotFound,               // 404
+    MethodNotAllowed,       // 405
+    InternalError,          // 500
 }
 
 impl Response {
@@ -258,6 +261,15 @@ impl Response {
             }
             StatusCode::NotFound => {
                 buffer += "404 Not Found\r\n";
+            }
+            StatusCode::BadRequest => {
+                buffer += "400 Bad Request\r\n";
+            }
+            StatusCode::MethodNotAllowed => {
+                buffer += "405 Method Not Allowed\r\n";
+            }
+            StatusCode::InternalError => {
+                buffer += "500 Internal Error\r\n";
             }
         }
         for (key, val) in self.headers.iter() {
