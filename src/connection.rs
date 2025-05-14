@@ -29,16 +29,22 @@ fn router(req: Request) -> Response {
     match (&req.method, req.path.as_str()) {
         (Method::GET, "/")      => handle_root_get(req),
         (Method::POST, "/")     => handle_root_post(req),
+        (Method::PUT, "/")      => handle_unallowed_method(),
+        (Method::DELETE, "/")   => handle_unallowed_method(),
         _                       => Response::not_found()
     }
 }
 
 fn handle_root_get(_req: Request) -> Response {
-    Response::new().status(200).text(&"Hello")
+    Response::new().status(StatusCode::Ok).text(&"Hello")
 }
 
 fn handle_root_post(req: Request) -> Response {
-    Response::new().status(200).text(&req.body)
+    Response::new().status(StatusCode::Ok).text(&req.body)
+}
+
+fn handle_unallowed_method() -> Response {
+    Response::new().status(StatusCode::MethodNotAllowed).text(&"405 Method Not Allowed")
 }
 
 fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
@@ -80,7 +86,8 @@ struct Request {
 enum Method {
     GET,
     POST,
-    ERROR,
+    PUT,
+    DELETE,
 }
 
 enum ParseError {
@@ -226,7 +233,7 @@ impl Response {
         self.body = match serde_json::to_vec(json) {
             Ok(ok) => ok,
             Err(_) => {
-                self.headers.insert("x-serialize-error".to_string(), true.to_string());
+                self = self.header("x-serialize-error", "true").status(StatusCode::InternalError);
                 b"{\"Error\": \"Could not serialize JSON\"}".to_vec()
             },
         };
