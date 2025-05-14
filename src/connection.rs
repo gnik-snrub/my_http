@@ -238,13 +238,13 @@ impl Response {
         self
     }
 
-    fn header(mut self, key: String, value: String) -> Response {
-        if !key.find(":").is_none() && !key.find("\r").is_none() && !key.find("\n").is_none() {
+    fn header(mut self, key: &str, value: &str) -> Response {
+        if !key.contains(":") || !key.contains("\r") || !key.contains("\n") {
             println!("Error: Invalid header entered");
             return self
         }
         let lower = key.trim().to_lowercase();
-        self.headers.insert(lower, value);
+        self.headers.insert(lower.to_string(), value.to_string());
         self
     }
 
