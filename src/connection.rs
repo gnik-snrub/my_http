@@ -1,8 +1,8 @@
-use std::{collections::HashMap, io::{Read, Write}, net::TcpStream};
-use serde::Serialize;
+use std::{io::{Read, Write}, net::TcpStream};
 
-use crate::parser::{generate_body, generate_headers, parse_request, Request, Method};
+use crate::parser::{generate_body, generate_headers, parse_request};
 use crate::response::{Response, StatusCode};
+use crate::router::router;
 
 pub fn handle_client(stream: &mut TcpStream) {
     println!("Hello world");
@@ -26,28 +26,6 @@ pub fn handle_client(stream: &mut TcpStream) {
         }
     };
     send_response(stream, response.finalize().to_vec());
-}
-
-fn router(req: Request) -> Response {
-    match (&req.method, req.path.as_str()) {
-        (Method::GET, "/")      => handle_root_get(req),
-        (Method::POST, "/")     => handle_root_post(req),
-        (Method::PUT, "/")      => handle_unallowed_method(),
-        (Method::DELETE, "/")   => handle_unallowed_method(),
-        _                       => Response::not_found()
-    }
-}
-
-fn handle_root_get(_req: Request) -> Response {
-    Response::new().status(StatusCode::Ok).text(&"Hello")
-}
-
-fn handle_root_post(req: Request) -> Response {
-    Response::new().status(StatusCode::Ok).text(&req.body)
-}
-
-fn handle_unallowed_method() -> Response {
-    Response::new().status(StatusCode::MethodNotAllowed).text(&"405 Method Not Allowed")
 }
 
 fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {

@@ -2,6 +2,7 @@ use std::net::TcpListener;
 mod connection;
 use connection::handle_client;
 mod parser;
+mod router;
 mod response;
 
 fn main() -> std::io::Result<()>{
