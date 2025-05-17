@@ -38,10 +38,15 @@ pub fn parse_request(bytes: &Vec<u8>) -> Result<(usize, Request), ParseError> {
                     Method::GET
                 }
             };
-            let path_query_split: Vec<&str> = req_vec[1].split("?").collect();
+            let mut path_query_split: Vec<String> = req_vec[1].split("?").map(|s| s.to_string()).collect();
             let path = path_query_split[0].to_string();
             let mut query_map: HashMap<String, String> = HashMap::new();
             if path_query_split.len() > 1 {
+                for string in path_query_split.iter_mut() {
+                    let out = percent_decoder(string)?;
+                    *string = out;
+                }
+
                 for query in path_query_split[1].split("&") {
                     let query_segments: Vec<&str> = query.split("=").collect();
                     if query_segments.len() <= 1 {
@@ -108,3 +113,29 @@ pub fn generate_body(length: Option<&String>, master_buffer: &mut Vec<u8>, idx: 
     }
 }
 
+fn percent_decoder(input: &str) -> Result<String, ParseError> {
+    let mut iter = input.chars().peekable();
+    let mut out = String::new();
+
+    while let Some(ch) = iter.next() {
+        if ch != '%' {
+            out.push(ch);
+            continue;
+        }
+
+        let hi = iter.next().ok_or(ParseError::BadRequest)?;
+        let lo = iter.next().ok_or(ParseError::BadRequest)?;
+
+        let hi_val = hi.to_digit(16).ok_or(ParseError::BadRequest)?;
+        let lo_val = lo.to_digit(16).ok_or(ParseError::BadRequest)?;
+
+        let byte = (hi_val * 16 + lo_val) as u8;
+
+        if byte > 0x7F {
+            return Err(ParseError::BadRequest);
+        }
+
+        out.push(byte as char);
+    }
+    Ok(out)
+}
