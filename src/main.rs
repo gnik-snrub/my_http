@@ -9,7 +9,7 @@ mod response;
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("Listening on 127.0.0.1:7878");
 
-    while let Ok((socket, addr)) = listener.accept().await {
+    while let Ok((socket, _addr)) = listener.accept().await {
         tokio::spawn(handle_client(socket));
     }
 

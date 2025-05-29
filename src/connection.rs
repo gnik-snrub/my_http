@@ -1,17 +1,21 @@
-use std::{io::{Read, Write}, net::TcpStream};
+use std::io::{Read, Write};
+
+use bytes::BytesMut;
+
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
 
 use crate::parser::{generate_body, generate_headers, parse_request};
 use crate::response::{Response, StatusCode};
 use crate::router::router;
 
-pub fn handle_client(stream: &mut TcpStream) {
+pub async fn handle_client(mut stream: TcpStream) {
     println!("Hello world");
     println!("Connected stream: {:?}", stream);
 
-    let mut master_buffer: Vec<u8> = vec![];
-    let mut scratch: [u8; 512] = [0u8; 512];
+    let mut master_buffer = BytesMut::new();
 
-    collect_stream(stream, &mut scratch, &mut master_buffer);
+    collect_stream(&mut stream, &mut master_buffer).await;
 
     let parse_result = parse_request(&master_buffer);
     let mut response = match parse_result {
@@ -25,21 +29,20 @@ pub fn handle_client(stream: &mut TcpStream) {
             Response::new().status(StatusCode::BadRequest)
         }
     };
-    send_response(stream, response.finalize().to_vec());
+    send_response(stream, response.finalize().to_vec()).await;
 }
 
-fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer: &mut Vec<u8>) {
+async fn collect_stream(stream: &mut TcpStream, master_buffer: &mut BytesMut) {
     loop {
         if master_buffer.len() >= 8000 {
             break;
         }
-        let bytes_read = stream.read(scratch);
+        let bytes_read = stream.read_buf(master_buffer).await;
         match bytes_read {
             Ok(n) => {
                 if n == 0 {
                     break;
                 }
-                master_buffer.extend_from_slice(&scratch[..n]);
             },
             Err(e) => {
                 println!("Error reading stream data: {:?}", e);
@@ -53,8 +56,9 @@ fn collect_stream(stream: &mut TcpStream, scratch: &mut [u8; 512], master_buffer
     }
 }
 
-fn send_response(stream: &mut TcpStream, res_bytes: Vec<u8>) {
-    let result = stream.write_all(&res_bytes);
+async fn send_response(mut stream: TcpStream, res_bytes: Vec<u8>) {
+    let _ = stream.writable().await;
+    let result = stream.try_write(&res_bytes);
     match result {
         Ok(_) => {
             println!("Response sent...");

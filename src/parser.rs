@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use bytes::BytesMut;
+
 #[derive(Debug)]
 pub struct Request {
     pub method: Method,
@@ -22,7 +24,7 @@ pub enum ParseError {
     BadRequest,
 }
 
-pub fn parse_request(bytes: &Vec<u8>) -> Result<(usize, Request), ParseError> {
+pub fn parse_request(bytes: &BytesMut) -> Result<(usize, Request), ParseError> {
     for i in 1..bytes.len() {
         if bytes[i - 1] == b"\r"[0] && bytes[i] == b"\n"[0] {
             let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
@@ -76,7 +78,7 @@ pub fn parse_request(bytes: &Vec<u8>) -> Result<(usize, Request), ParseError> {
     return Err(ParseError::BadRequest);
 }
 
-pub fn generate_headers(master_buffer: &mut Vec<u8>, idx: &mut usize) -> HashMap<String, String> {
+pub fn generate_headers(master_buffer: &mut BytesMut, idx: &mut usize) -> HashMap<String, String> {
     let mut header_chars = vec![];
 
     while !header_chars.ends_with(&['\r', '\n', '\r', '\n']) {
@@ -95,7 +97,7 @@ pub fn generate_headers(master_buffer: &mut Vec<u8>, idx: &mut usize) -> HashMap
     header_map
 }
 
-pub fn generate_body(length: Option<&String>, master_buffer: &mut Vec<u8>, idx: usize) -> Vec<u8>{
+pub fn generate_body(length: Option<&String>, master_buffer: &mut BytesMut, idx: usize) -> Vec<u8>{
     match length {
         Some(len) => {
             let parsed = len.parse::<usize>();
