@@ -9,13 +9,13 @@ use crate::parser::{generate_body, generate_headers, parse_request};
 use crate::response::{Response, StatusCode};
 use crate::router::router;
 
-pub async fn handle_client(mut stream: TcpStream) {
+pub async fn handle_client(mut socket: TcpStream) {
     println!("Hello world");
-    println!("Connected stream: {:?}", stream);
+    println!("Connected socket: {:?}", socket);
 
     let mut master_buffer = BytesMut::new();
 
-    collect_stream(&mut stream, &mut master_buffer).await;
+    collect_socket(&mut socket, &mut master_buffer).await;
 
     let parse_result = parse_request(&master_buffer);
     let mut response = match parse_result {
@@ -23,21 +23,21 @@ pub async fn handle_client(mut stream: TcpStream) {
             req.headers = generate_headers(&mut master_buffer, &mut idx);
             req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
 
-            router(req)
+            router(req).await
         }
         Err(_) => {
             Response::new().status(StatusCode::BadRequest)
         }
     };
-    send_response(stream, response.finalize().to_vec()).await;
+    send_response(socket, response.finalize().to_vec()).await;
 }
 
-async fn collect_stream(stream: &mut TcpStream, master_buffer: &mut BytesMut) {
+async fn collect_socket(socket: &mut TcpStream, master_buffer: &mut BytesMut) {
     loop {
         if master_buffer.len() >= 8000 {
             break;
         }
-        let bytes_read = stream.read_buf(master_buffer).await;
+        let bytes_read = socket.read_buf(master_buffer).await;
         match bytes_read {
             Ok(n) => {
                 if n == 0 {
@@ -45,7 +45,7 @@ async fn collect_stream(stream: &mut TcpStream, master_buffer: &mut BytesMut) {
                 }
             },
             Err(e) => {
-                println!("Error reading stream data: {:?}", e);
+                println!("Error reading socket data: {:?}", e);
             }
         }
         for window in master_buffer.windows(4) {
@@ -56,9 +56,9 @@ async fn collect_stream(stream: &mut TcpStream, master_buffer: &mut BytesMut) {
     }
 }
 
-async fn send_response(mut stream: TcpStream, res_bytes: Vec<u8>) {
-    let _ = stream.writable().await;
-    let result = stream.try_write(&res_bytes);
+async fn send_response(mut socket: TcpStream, res_bytes: Vec<u8>) {
+    let _ = socket.writable().await;
+    let result = socket.try_write(&res_bytes);
     match result {
         Ok(_) => {
             println!("Response sent...");
@@ -67,5 +67,6 @@ async fn send_response(mut stream: TcpStream, res_bytes: Vec<u8>) {
             println!("Error sending response: {:?}", e);
         }
     }
-    let _ = stream.flush();
+    let _ = socket.flush();
+    let _ = socket.shutdown().await;
 }
