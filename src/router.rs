@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serde_json::{json, Value};
 
 use crate::parser::{Request, Method};
@@ -14,6 +16,8 @@ pub async fn router(req: Request) -> Response {
         (Method::POST, "/echo")  => handle_unallowed_method().await,
         (Method::PUT, "/echo")  => handle_unallowed_method().await,
         (Method::DELETE, "/echo")  => handle_unallowed_method().await,
+
+        (Method::GET, "/sleep")  => handle_sleep().await,
 
         _                       => Response::not_found()
     }
@@ -37,4 +41,10 @@ async fn handle_echo_get(req: Request) -> Response {
 
 async fn handle_unallowed_method() -> Response {
     Response::new().status(StatusCode::MethodNotAllowed).text(&"405 Method Not Allowed")
+}
+
+async fn handle_sleep() -> Response {
+    println!("Sleeping...");
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    Response::new().status(StatusCode::Ok).text(&"Slept for 5 seconds")
 }
