@@ -10,8 +10,6 @@ use crate::response::{Response, StatusCode};
 use crate::router::router;
 
 pub async fn handle_client(mut socket: TcpStream) {
-    println!("Hello world");
-    println!("Connected socket: {:?}", socket);
 
     let mut master_buffer = BytesMut::new();
 
@@ -61,7 +59,7 @@ async fn send_response(mut socket: TcpStream, res_bytes: Vec<u8>) {
     let result = socket.try_write(&res_bytes);
     match result {
         Ok(_) => {
-            println!("Response sent...");
+            // No errors
         }
         Err(e) => {
             println!("Error sending response: {:?}", e);
