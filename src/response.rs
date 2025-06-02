@@ -8,6 +8,7 @@ pub struct Response {
     pub body: Vec<u8>,
 }
 
+#[derive(Debug)]
 pub enum StatusCode {
     Ok,                     // 200
     BadRequest,             // 400
