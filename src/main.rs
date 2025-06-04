@@ -8,6 +8,7 @@ use connection::handle_client;
 mod parser;
 mod router;
 mod response;
+mod middleware;
 
 #[tokio::main] async fn main() -> std::io::Result<()>{
     let file_appender = rolling::daily("logs", "server.log");
