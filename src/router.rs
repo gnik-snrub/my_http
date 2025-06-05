@@ -25,9 +25,6 @@ pub async fn router(req: Request, res: Response) -> Response {
     };
 
     tracing::info!(
-        method  = ?req.method,
-        path    = %req.path,
-        query   = ?req.query,
         status  = ?res.status,
         len     = res.body.len(),
         "served_request"

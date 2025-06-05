@@ -74,11 +74,14 @@ impl Response {
             StatusCode::Ok => {
                 buffer += "200 OK\r\n";
             }
-            StatusCode::NotFound => {
-                buffer += "404 Not Found\r\n";
-            }
             StatusCode::BadRequest => {
                 buffer += "400 Bad Request\r\n";
+            }
+            StatusCode::Unauthorized => {
+                buffer += "401 Unauthorized\r\n";
+            }
+            StatusCode::NotFound => {
+                buffer += "404 Not Found\r\n";
             }
             StatusCode::MethodNotAllowed => {
                 buffer += "405 Method Not Allowed\r\n";
