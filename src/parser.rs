@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bytes::BytesMut;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Request {
     pub method: Method,
     pub path: String,
@@ -12,7 +12,7 @@ pub struct Request {
     pub body: Vec<u8>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Method {
     GET,
     POST,
