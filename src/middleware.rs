@@ -54,3 +54,13 @@ pub trait Middleware: Send + Sync {
 
 type Next = Arc<dyn Fn(Request) -> ResponseFuture + Send + Sync>;
 type ResponseFuture = Pin<Box<dyn Future<Output = Response> + Send>>;
+
+pub struct AddHeader;
+
+#[async_trait]
+impl Middleware for AddHeader {
+    async fn handle(&self, req: Request, next: Next) -> Response {
+        let res = next(req).await.header("X-Example", "It works! :D");
+        res
+    }
+}
