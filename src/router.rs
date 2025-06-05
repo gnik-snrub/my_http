@@ -17,6 +17,8 @@ pub async fn router(req: Request, res: Response) -> Response {
         (Method::PUT, "/echo")  => handle_unallowed_method().await,
         (Method::DELETE, "/echo")  => handle_unallowed_method().await,
 
+        (Method::GET, "/page")  => handle_page_get(&req, res).await,
+
         (Method::GET, "/sleep")  => handle_sleep().await,
 
         _                       => Response::not_found()
@@ -48,6 +50,11 @@ async fn handle_echo_get(req: &Request, res: Response) -> Response {
         json[q.0] = Value::String(q.1.to_string())
     }
     res.status(StatusCode::Ok).json(&json)
+}
+
+async fn handle_page_get(_req: &Request, res: Response) -> Response {
+    let html = "<html></html>";
+    res.status(StatusCode::Ok).html(html)
 }
 
 async fn handle_unallowed_method() -> Response {
