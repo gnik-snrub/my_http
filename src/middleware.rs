@@ -15,7 +15,7 @@ impl Dispatcher {
         }
     }
 
-    pub fn r#use(&mut self, mw: impl Middleware + 'static) {
+    pub fn add(&mut self, mw: impl Middleware + 'static) {
         self.middleware.push(Arc::new(mw));
     }
 

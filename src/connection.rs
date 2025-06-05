@@ -21,6 +21,7 @@ pub async fn handle_client(mut socket: TcpStream) {
             req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
 
             let mut dispatcher = Dispatcher::new();
+            dispatcher.add(AddHeader);
 
             let mw_response = dispatcher.dispatch(req.clone()).await;
 
