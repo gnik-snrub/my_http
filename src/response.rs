@@ -9,10 +9,11 @@ pub struct Response {
     pub body: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum StatusCode {
     Ok,                     // 200
     BadRequest,             // 400
+    Unauthorized,           // 401
     NotFound,               // 404
     MethodNotAllowed,       // 405
     InternalError,          // 500
