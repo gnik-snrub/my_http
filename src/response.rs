@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct Response {
     pub status: StatusCode,
     pub headers: HashMap<String, String>,
@@ -56,7 +57,7 @@ impl Response {
     }
 
     pub fn header(mut self, key: &str, value: &str) -> Response {
-        if !key.contains(":") || !key.contains("\r") || !key.contains("\n") {
+        if key.contains(":") || key.contains("\r") || key.contains("\n") {
             println!("Error: Invalid header entered");
             return self
         }
