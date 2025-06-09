@@ -1,7 +1,9 @@
+use std::path::PathBuf;
 use std::time::Duration;
 
 use serde_json::{json, Value};
 
+use crate::file_serving::serve_file;
 use crate::parser::{Request, Method};
 use crate::response::{Response, StatusCode};
 
@@ -20,6 +22,8 @@ pub async fn router(req: Request, res: Response) -> Response {
         (Method::GET, "/page")  => handle_page_get(&req, res).await,
 
         (Method::GET, "/sleep")  => handle_sleep().await,
+
+        (Method::GET, path) if path.starts_with("/static/") => handle_static(&req, res).await,
 
         _                       => Response::not_found()
     };
@@ -62,4 +66,9 @@ async fn handle_sleep() -> Response {
     println!("Sleeping...");
     tokio::time::sleep(Duration::from_secs(5)).await;
     Response::new().status(StatusCode::Ok).text(&"Slept for 5 seconds")
+}
+
+async fn handle_static(req: &Request, res: Response) -> Response {
+    let file_response = serve_file(&req, res).await;
+    file_response
 }
