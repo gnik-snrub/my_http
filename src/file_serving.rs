@@ -10,6 +10,11 @@ pub async fn serve_file(req: &Request, res: Response) -> Response {
     return match tokio::fs::read(&rel_path).await {
         Ok(bytes) => {
             let mime_type = get_mime_type(file_name);
+            let mut file_res = res.status(StatusCode::Ok).text(&"")
+                .header("Content-Type", mime_type)
+                .header("Content-Length", bytes.len().to_string().as_str());
+            file_res.body = bytes;
+            file_res
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             println!("{:?}", e);
