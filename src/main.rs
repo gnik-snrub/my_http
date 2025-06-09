@@ -9,6 +9,7 @@ mod parser;
 mod router;
 mod response;
 mod middleware;
+mod file_serving;
 
 #[tokio::main] async fn main() -> std::io::Result<()>{
     let file_appender = rolling::daily("logs", "server.log");
