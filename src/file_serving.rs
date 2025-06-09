@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::{parser::Request, response::{Response, StatusCode}};
 
@@ -9,7 +9,7 @@ pub async fn serve_file(req: &Request, res: Response) -> Response {
 
     return match tokio::fs::read(&rel_path).await {
         Ok(bytes) => {
-            res.status(StatusCode::Ok).text(&"")
+            let mime_type = get_mime_type(file_name);
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             println!("{:?}", e);
@@ -17,6 +17,31 @@ pub async fn serve_file(req: &Request, res: Response) -> Response {
         }
         Err(_) => {
             res.status(StatusCode::InternalError).text(&"500 Internal Error")
+        }
+    }
+}
+
+fn get_mime_type(file_name: &str) -> &str {
+    let mut mime_types = HashMap::new();
+    mime_types.insert("html", "text/html");
+    mime_types.insert("css", "text/css");
+    mime_types.insert("js", "application/javascript");
+    mime_types.insert("png", "image/png");
+
+    let file_extension = file_name.rsplit(".").next();
+    return match file_extension {
+        Some(ext) => {
+            match mime_types.get(ext) {
+                Some(mime) => {
+                    *mime
+                }
+                None => {
+                    &"application/octet-stream"
+                }
+            }
+        }
+        None => {
+            &""
         }
     }
 }
