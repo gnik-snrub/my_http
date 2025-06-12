@@ -2,9 +2,11 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
-use crate::file_serving::serve_file;
-use crate::parser::{Request, Method};
-use crate::response::{Response, StatusCode};
+use crate::handlers::file_serving::serve_file;
+use crate::core::{
+    parser::{Request, Method},
+    response::{Response, StatusCode},
+};
 
 pub async fn router(req: Request, res: Response) -> Response {
     let res = match (&req.method, req.path.as_str()) {

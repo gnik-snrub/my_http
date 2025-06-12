@@ -3,10 +3,12 @@ use bytes::BytesMut;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-use crate::middleware::{AddHeader, Auth, Dispatcher, Logger, Timer};
-use crate::parser::{generate_body, generate_headers, parse_request};
-use crate::response::{Response, StatusCode};
-use crate::router::router;
+use crate::http::middleware::{AddHeader, Auth, Dispatcher, Logger, Timer};
+use crate::core::{
+    parser::{generate_body, generate_headers, parse_request},
+    response::{Response, StatusCode},
+    router::router,
+};
 
 pub async fn handle_client(mut socket: TcpStream) {
 

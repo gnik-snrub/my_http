@@ -3,13 +3,11 @@ use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, Layer };
 use tracing_appender::rolling;
 
-mod connection;
-use connection::handle_client;
-mod parser;
-mod router;
-mod response;
-mod middleware;
-mod file_serving;
+mod core;
+mod http;
+mod handlers;
+
+use core::connection::handle_client;
 
 #[tokio::main] async fn main() -> std::io::Result<()>{
     let file_appender = rolling::daily("logs", "server.log");

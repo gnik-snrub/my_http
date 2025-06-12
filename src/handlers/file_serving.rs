@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::{self}, path::PathBuf};
 use serde_json::json;
 
-use crate::{parser::Request, response::{Response, StatusCode}};
+use crate::core::{parser::Request, response::{Response, StatusCode}};
 
 pub async fn serve_file(req: &Request, res: Response) -> Response {
     let path_split: Vec<&str> = req.path.split('/').collect();

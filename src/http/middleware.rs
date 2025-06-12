@@ -2,7 +2,7 @@ use std::{future::Future, pin::Pin, sync::Arc, time::SystemTime};
 
 use async_trait::async_trait;
 
-use crate::{parser::Request, response::{Response, StatusCode}};
+use crate::core::{parser::Request, response::{Response, StatusCode}};
 
 pub struct Dispatcher {
     middleware: Vec<Arc<dyn Middleware>>,
