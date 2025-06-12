@@ -1,3 +1,4 @@
+use pool::thread_pool::ThreadPool;
 use tokio::net::TcpListener;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, Layer };
@@ -6,6 +7,7 @@ use tracing_appender::rolling;
 mod core;
 mod http;
 mod handlers;
+mod pool;
 
 use core::connection::handle_client;
 
@@ -26,8 +28,18 @@ use core::connection::handle_client;
     let listener = TcpListener::bind("127.0.0.1:7878").await?;
     println!("Listening on 127.0.0.1:7878");
 
+    let threadpool = ThreadPool::new(10);
+
     while let Ok((socket, _addr)) = listener.accept().await {
-        tokio::spawn(handle_client(socket));
+        //tokio::spawn(handle_client(socket));
+
+        // The custom threadpool, at this stage, is about 30x slower than tokio
+        // But, nonetheless, it is a functional custom threadpool!
+        threadpool.enqueue(Box::new(|| {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(handle_client(socket));
+        }));
+        
     }
 
     Ok(())
