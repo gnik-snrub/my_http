@@ -1,24 +1,26 @@
-use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
-use std::sync::mpsc::{channel, Sender};
+use std::future::Future;
+use std::sync::Arc;
+use std::thread::{self};
+use crossbeam::channel::{unbounded, Sender};
+use tokio::runtime::Handle;
 
-pub struct ThreadPool<T = Job> {
+pub struct ThreadPool {
     sender: Sender<Job>,
-    pool: Vec<JoinHandle<T>>,
+    handle: Handle,
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
 impl ThreadPool {
-    pub fn new(size: u32) -> ThreadPool {
-        let (sender, rx) = channel();
-        let receiver = Arc::new(Mutex::new(rx));
+    pub fn new(size: u32, handle: Handle) -> ThreadPool {
+        let (sender, rx) = unbounded();
+        let receiver = Arc::new(rx);
         let mut threads = vec![];
         for _ in 0..size {
             let receiver = Arc::clone(&receiver);
             let thread = thread::spawn(move || {
                 loop {
-                    let job: Job = receiver.lock().unwrap().recv().unwrap();
+                    let job: Job = receiver.recv().unwrap();
                     job();
                 }
             });
@@ -27,17 +29,23 @@ impl ThreadPool {
 
         return ThreadPool {
             sender,
-            pool: threads,
+            handle,
         }
     }
 
-    pub fn enqueue(&self, job: Job) {
-        match self.sender.send(job) {
-            Ok(_) => {
-            },
-            Err(e) => {
-                eprintln!("Error enqueueing thread: {:?}", e);
-            }
+    pub fn enqueue<F, Fut>(&self, job: F) 
+    where 
+        F: FnOnce() -> Fut + Send + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
+    {
+        let handle = self.handle.clone();
+        let wrapped: Job = Box::new(move || {
+            let fut = job();
+            handle.block_on(fut);
+        });
+
+        if let Err(e) = self.sender.send(wrapped) {
+            eprintln!("Error enqueueing job: {e}");
         }
     }
 }
