@@ -28,13 +28,6 @@ pub async fn router(req: Request, res: Response) -> Response {
 
         _                       => Response::not_found()
     };
-
-    tracing::info!(
-        status  = ?res.status,
-        len     = res.body.len(),
-        "served_request"
-    );
-
     res
 }
 
