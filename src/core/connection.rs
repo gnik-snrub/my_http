@@ -3,7 +3,7 @@ use bytes::BytesMut;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-use crate::http::middleware::{AddHeader, Auth, Dispatcher, Logger, Timer};
+use crate::http::middleware::{add_header::AddHeader, auth::Auth, Dispatcher, logger::Logger, timer::Timer};
 use crate::core::{
     parser::{generate_body, generate_headers, parse_request},
     response::{Response, StatusCode},
