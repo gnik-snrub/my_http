@@ -1,16 +1,18 @@
+use std::sync::Arc;
+
 use bytes::BytesMut;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-use crate::http::middleware::{add_header::AddHeader, auth::Auth, Dispatcher, logger::Logger, timer::Timer};
 use crate::core::{
     parser::{generate_body, generate_headers, parse_request},
     response::{Response, StatusCode},
     router::router,
 };
+use crate::http::middleware::Dispatcher;
 
-pub async fn handle_client(mut socket: TcpStream) {
+pub async fn handle_client(mut socket: TcpStream, dispatcher: Arc<Dispatcher>) {
 
     let mut master_buffer = BytesMut::new();
 
@@ -21,12 +23,6 @@ pub async fn handle_client(mut socket: TcpStream) {
         Ok((mut idx, mut req)) => {
             req.headers = generate_headers(&mut master_buffer, &mut idx);
             req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
-
-            let mut dispatcher = Dispatcher::new();
-            dispatcher.add(Timer);
-            dispatcher.add(AddHeader);
-            dispatcher.add(Logger);
-            dispatcher.add(Auth);
 
             let mut mw_response = dispatcher.dispatch(req.clone()).await;
 

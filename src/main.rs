@@ -1,3 +1,4 @@
+use http::middleware::{add_header::AddHeader, auth::Auth, Dispatcher, logger::Logger, timer::Timer};
 use pool::thread_pool::ThreadPool;
 use tokio::{net::TcpListener, runtime};
 use tracing::level_filters::LevelFilter;
@@ -10,6 +11,7 @@ mod handlers;
 mod pool;
 
 use core::connection::handle_client;
+use std::sync::Arc;
 
 #[tokio::main] async fn main() -> std::io::Result<()>{
     let file_appender = rolling::daily("logs", "server.log");
@@ -33,9 +35,18 @@ use core::connection::handle_client;
 
     let threadpool = ThreadPool::new(10, handle);
 
+    let mut dispatcher = Dispatcher::new();
+    dispatcher.add(Timer);
+    dispatcher.add(AddHeader);
+    let logger = Logger::new();
+    dispatcher.add(logger);
+    dispatcher.add(Auth);
+
+    let dispatcher_arc = Arc::new(dispatcher);
     while let Ok((socket, _addr)) = listener.accept().await {
+        let dispatcher_clone = dispatcher_arc.clone();
         threadpool.enqueue(move || async move {
-            handle_client(socket).await;
+            handle_client(socket, dispatcher_clone).await;
         });
         
     }
