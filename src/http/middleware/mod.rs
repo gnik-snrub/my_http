@@ -9,6 +9,7 @@ use async_trait::async_trait;
 
 use crate::core::{parser::Request, response::Response};
 
+#[derive(Clone)]
 pub struct Dispatcher {
     middleware: Vec<Arc<dyn Middleware>>,
 }
