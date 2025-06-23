@@ -1,4 +1,4 @@
-use http::middleware::{add_header::AddHeader, auth::Auth, Dispatcher, logger::Logger, timer::Timer};
+use http::middleware::{add_header::AddHeader, auth::Auth, logger::Logger, set_cookie::SetCookie, timer::Timer, Dispatcher};
 use pool::thread_pool::ThreadPool;
 use tokio::{net::TcpListener, runtime};
 use tokio_rustls::{TlsAcceptor, rustls::ServerConfig};
@@ -41,9 +41,9 @@ use std::sync::Arc;
     let threadpool = ThreadPool::new(10, handle);
 
     let mut dispatcher = Dispatcher::new();
-    dispatcher.add(Timer);
-    dispatcher.add(AddHeader);
     dispatcher.add(Logger::new());
+    dispatcher.add(Timer);
+    dispatcher.add(SetCookie);
     let dispatcher_arc = Arc::new(dispatcher);
 
     while let Ok((socket, _addr)) = listener.accept().await {
