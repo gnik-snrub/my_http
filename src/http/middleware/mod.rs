@@ -2,6 +2,7 @@ pub mod add_header;
 pub mod auth;
 pub mod logger;
 pub mod timer;
+pub mod set_cookie;
 
 use std::{future::Future, pin::Pin, sync::Arc };
 
