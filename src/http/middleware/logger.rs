@@ -12,10 +12,17 @@ pub struct Logger;
 #[async_trait]
 impl Middleware for Logger {
     async fn handle(&self, req: Request, next: Next) -> Response {
+        let formatted_headers = req.headers
+            .iter()
+            .map(|(k, v)| format!("{k}: {v}"))
+            .collect::<Vec<_>>()
+            .join("\r\n");
+
         tracing::info!(
             method  = ?req.method,
             path    = %req.path,
             query   = ?req.query,
+            headers = formatted_headers,
             "request_received"
         );
 
