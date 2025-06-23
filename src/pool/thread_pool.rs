@@ -20,7 +20,7 @@ impl ThreadPool {
             let receiver = Arc::clone(&receiver);
             let thread = thread::spawn(move || {
                 loop {
-                    let job: Job = receiver.recv().unwrap();
+                    let Ok(job): Result<Job, _> = receiver.recv() else { return; };
                     job();
                 }
             });

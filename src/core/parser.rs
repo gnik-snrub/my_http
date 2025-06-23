@@ -20,6 +20,7 @@ pub enum Method {
     DELETE,
 }
 
+#[derive(Debug)]
 pub enum ParseError {
     BadRequest,
 }
