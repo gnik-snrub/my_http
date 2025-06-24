@@ -1,4 +1,4 @@
-use http::middleware::{add_header::AddHeader, auth::Auth, logger::Logger, set_cookie::SetCookie, timer::Timer, Dispatcher};
+use http::middleware::{logger::Logger, set_cookie::SetCookie, timer::Timer, Dispatcher};
 use pool::thread_pool::ThreadPool;
 use tokio::{net::TcpListener, runtime};
 use tokio_rustls::{TlsAcceptor, rustls::ServerConfig};
