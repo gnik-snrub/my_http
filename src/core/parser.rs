@@ -10,6 +10,7 @@ pub struct Request {
     pub query: HashMap<String, String>,
     pub headers: HashMap<String, String>,
     pub body: Vec<u8>,
+    pub cookies: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -67,6 +68,7 @@ pub fn parse_request(bytes: &BytesMut) -> Result<(usize, Request), ParseError> {
                 query: query_map,
                 headers: HashMap::new(),
                 body: vec![],
+                cookies: None,
             };
 
             if !request.version.starts_with("HTTP/1.") {
@@ -141,4 +143,22 @@ fn percent_decoder(input: &str) -> Result<String, ParseError> {
         out.push(byte as char);
     }
     Ok(out)
+}
+
+pub fn generate_cookies(req: &Request) -> HashMap<String, String>{
+    let mut cookies = HashMap::new();
+
+    if let Some(cookies_string) = req.headers.get(&"Cookies".to_string()) {
+        cookies_string.split(";").for_each(|c| {
+            let cookie = c.trim();
+            let pair: Vec<&str> = cookie.splitn(2, "=").collect();
+
+            cookies.insert(pair[0].trim().to_string(), pair[1].trim().to_string());
+        });
+    } else {
+        eprintln!("Cookies header not found");
+    }
+
+
+    cookies
 }

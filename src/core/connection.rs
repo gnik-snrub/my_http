@@ -13,6 +13,8 @@ use crate::core::{
 };
 use crate::http::middleware::Dispatcher;
 
+use super::parser::generate_cookies;
+
 pub async fn handle_client(mut socket: TlsStream<TcpStream>, dispatcher: Arc<Dispatcher>) {
 
     loop {
@@ -41,6 +43,7 @@ pub async fn handle_client(mut socket: TlsStream<TcpStream>, dispatcher: Arc<Dis
         }
 
         req.headers = generate_headers(&mut master_buffer, &mut idx);
+        req.cookies = Some(generate_cookies(&req));
         req.body = generate_body(req.headers.get("Content-Length"), &mut master_buffer, idx);
 
         let mut mw_response = dispatcher.dispatch(req.clone()).await;
