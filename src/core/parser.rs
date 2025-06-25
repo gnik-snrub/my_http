@@ -148,7 +148,7 @@ fn percent_decoder(input: &str) -> Result<String, ParseError> {
 pub fn generate_cookies(req: &Request) -> HashMap<String, String>{
     let mut cookies = HashMap::new();
 
-    if let Some(cookies_string) = req.headers.get(&"Cookies".to_string()) {
+    if let Some(cookies_string) = req.headers.get(&"Cookie".to_string()) {
         cookies_string.split(";").for_each(|c| {
             let cookie = c.trim();
             let pair: Vec<&str> = cookie.splitn(2, "=").collect();

@@ -3,6 +3,7 @@ pub mod auth;
 pub mod logger;
 pub mod timer;
 pub mod set_cookie;
+pub mod session_tracker;
 
 use std::{future::Future, pin::Pin, sync::Arc };
 

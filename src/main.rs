@@ -1,4 +1,4 @@
-use http::middleware::{logger::Logger, set_cookie::SetCookie, timer::Timer, Dispatcher};
+use http::middleware::{logger::Logger, session_tracker::SessionTracker, set_cookie::SetCookie, timer::Timer, Dispatcher};
 use pool::thread_pool::ThreadPool;
 use tokio::{net::TcpListener, runtime};
 use tokio_rustls::{TlsAcceptor, rustls::ServerConfig};
@@ -44,6 +44,9 @@ use std::sync::Arc;
     dispatcher.add(Logger::new());
     dispatcher.add(Timer);
     dispatcher.add(SetCookie);
+    let sessions = SessionTracker::new();
+    dispatcher.add(sessions);
+
     let dispatcher_arc = Arc::new(dispatcher);
 
     while let Ok((socket, _addr)) = listener.accept().await {
