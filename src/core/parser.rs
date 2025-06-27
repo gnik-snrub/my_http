@@ -162,3 +162,45 @@ pub fn generate_cookies(req: &Request) -> HashMap<String, String>{
 
     cookies
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_basic_get_request() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"GET /index.html HTTP/1.1\r\n\r\n");
+        let req = parse_request(&buf).unwrap();
+        assert_eq!(req.1.method, Method::GET);
+        assert_eq!(req.1.path, "/index.html");
+        assert_eq!(req.1.version, "HTTP/1.1");
+    }
+
+    #[test]
+    fn parses_basic_post_request() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"POST /submit HTTP/1.0\r\n\r\n");
+        let req = parse_request(&buf).unwrap();
+        assert_eq!(req.1.method, Method::POST);
+        assert_eq!(req.1.path, "/submit");
+        assert_eq!(req.1.version, "HTTP/1.0");
+    }
+
+    #[test]
+    fn errors_on_missing_parts() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"GET /missingversion\r\n\r\n");
+        let result = parse_request(&buf);
+        println!("{:?}", result);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn errors_on_empty_input() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"");
+        let result = parse_request(&buf);
+        assert!(result.is_err());
+    }
+
