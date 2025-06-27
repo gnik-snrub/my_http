@@ -32,18 +32,33 @@ pub fn parse_request(bytes: &BytesMut) -> Result<(usize, Request), ParseError> {
             let req_chars: Vec<char> = bytes[..i].iter().map(|b| *b as char).collect();
             let req_string = req_chars[0..req_chars.len()].iter().collect::<String>();
             let req_vec: Vec<&str> = req_string.split(" ").collect();
+
+            if req_vec.len() < 3 {
+                return Err(ParseError::BadRequest);
+            }
+
             let method = match req_vec[0] {
                 "GET" => Method::GET,
                 "POST" => Method::POST,
                 "PUT" => Method::PUT,
                 "DELETE" => Method::DELETE,
                 _ => {
-                    println!("{}", req_vec[0]);
-                    Method::GET
+                    println!("Error in request method: {}", req_vec[0]);
+                    return Err(ParseError::BadRequest);
                 }
             };
+
             let mut path_query_split: Vec<String> = req_vec[1].split("?").map(|s| s.to_string()).collect();
             let path = path_query_split[0].to_string();
+            if path_query_split.is_empty() || path.is_empty() {
+                return Err(ParseError::BadRequest);
+            }
+
+            let version = req_vec[2].trim().to_string();
+            if !version.starts_with("HTTP/1.") {
+                return Err(ParseError::BadRequest);
+            }
+
             let mut query_map: HashMap<String, String> = HashMap::new();
             if path_query_split.len() > 1 {
                 for string in path_query_split.iter_mut() {
@@ -64,16 +79,12 @@ pub fn parse_request(bytes: &BytesMut) -> Result<(usize, Request), ParseError> {
             let request = Request {
                 method,
                 path,
-                version: req_vec[2].to_string(),
+                version,
                 query: query_map,
                 headers: HashMap::new(),
                 body: vec![],
                 cookies: None,
             };
-
-            if !request.version.starts_with("HTTP/1.") {
-                return Err(ParseError::BadRequest);
-            }
 
             return Ok((i + 1, request))
         }
