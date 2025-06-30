@@ -300,4 +300,54 @@ mod tests {
         let body = generate_body(Some(&length), &mut buf, idx);
         assert_eq!(body, b"short");
     }
+
+    // generate_cookies tests
+    use std::collections::HashMap;
+
+    fn build_request_with_cookie_header(cookie_header: &str) -> Request {
+        let mut headers = HashMap::new();
+        headers.insert("Cookie".to_string(), cookie_header.to_string());
+
+        Request {
+            method: Method::GET,
+            path: "/".to_string(),
+            version: "HTTP/1.1".to_string(),
+            query: HashMap::new(),
+            headers,
+            body: Vec::new(),
+            cookies: None,
+        }
+    }
+
+    #[test]
+    fn parses_single_cookie_correct() {
+        let req = build_request_with_cookie_header("sessionid=abc123");
+        let cookies = generate_cookies(&req);
+        assert_eq!(cookies.get("sessionid").unwrap(), "abc123");
+    }
+
+    #[test]
+    fn parses_multiple_cookies() {
+        let req = build_request_with_cookie_header("a=1; b=2; c=3");
+        let cookies = generate_cookies(&req);
+        assert_eq!(cookies.get("a").unwrap(), "1");
+        assert_eq!(cookies.get("b").unwrap(), "2");
+        assert_eq!(cookies.get("c").unwrap(), "3");
+    }
+
+    #[test]
+    fn returns_empty_map_when_no_cookie_header_present() {
+        let req = Request {
+            method: Method::GET,
+            path: "/".to_string(),
+            version: "HTTP/1.1".to_string(),
+            query: HashMap::new(),
+            headers: HashMap::new(),
+            body: Vec::new(),
+            cookies: None,
+        };
+
+        let cookies = generate_cookies(&req);
+        assert!(cookies.is_empty());
+    }
 }
