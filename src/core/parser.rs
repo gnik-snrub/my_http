@@ -120,7 +120,9 @@ pub fn generate_body(length: Option<&String>, master_buffer: &mut BytesMut, idx:
             } else {
                 0
             };
-            let received_content: Vec<u8> = master_buffer[idx..idx + length].to_vec();
+            let max = master_buffer.len();
+            let end = if idx + length >= max { max } else { idx + length };
+            let received_content: Vec<u8> = master_buffer[idx..end].to_vec();
             return received_content;
         },
         None => {
@@ -251,5 +253,51 @@ mod tests {
         assert_eq!(headers.get("Another").unwrap(), "ok");
         assert!(!headers.contains_key("nBadHeaderLine"));
         assert_eq!(idx, 50);
+    }
+
+    // generate_body tests
+    #[test]
+    fn extracts_body_correctly() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Header: test\r\n\r\nbody data");
+        let idx = 16;
+        let length = "9".to_string();
+
+        let body = generate_body(Some(&length), &mut buf, idx);
+        assert_eq!(body, b"body data")
+    }
+
+    #[test]
+    fn returns_empty_vec_when_length_is_zero() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Header: test\r\n\r\n");
+
+        let idx = 16;
+        let length = "0".to_string();
+
+        let body = generate_body(Some(&length), &mut buf, idx);
+        assert!(body.is_empty());
+    }
+
+    #[test]
+    fn extracts_remaining_bytes_when_length_is_none() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Header: test\r\n\r\nsome data here");
+
+        let idx = 16;
+
+        let body = generate_body(None, &mut buf, idx);
+        assert!(body.is_empty());
+    }
+    #[test]
+    fn handles_length_larger_than_remaining_data_gracefully() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Header: test\r\n\r\nshort");
+
+        let idx = 16;
+        let length = "999".to_string();
+
+        let body = generate_body(Some(&length), &mut buf, idx);
+        assert_eq!(body, b"short");
     }
 }
