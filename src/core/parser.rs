@@ -178,6 +178,7 @@ pub fn generate_cookies(req: &Request) -> HashMap<String, String>{
 mod tests {
     use super::*;
 
+    // parse_request tests
     #[test]
     fn parses_basic_get_request() {
         let mut buf = BytesMut::new();
@@ -215,3 +216,40 @@ mod tests {
         assert!(result.is_err());
     }
 
+    // generate_headers tests
+    #[test]
+    fn parses_single_header() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Host: localhost\r\n\r\n");
+        let mut idx = 0;
+        let headers = generate_headers(&mut buf, &mut idx);
+
+        assert_eq!(headers.get("Host").unwrap(), "localhost");
+        assert_eq!(idx, 19);
+    }
+
+    #[test]
+    fn handles_multiple_headers() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Content-Type: text/plain\r\nUser-Agent: Test\r\n\r\n");
+        let mut idx = 0;
+        let headers = generate_headers(&mut buf, &mut idx);
+
+        assert_eq!(headers.get("Content-Type").unwrap(), "text/plain");
+        assert_eq!(headers.get("User-Agent").unwrap(), "Test");
+        assert_eq!(idx, 46);
+    }
+
+    #[test]
+    fn skips_malformed_lines_and_parses_valid_ones() {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(b"Good-Header: value\r\nBadHeaderLine\r\nAnother: ok\r\n\r\n");
+        let mut idx = 0;
+        let headers = generate_headers(&mut buf, &mut idx);
+
+        assert_eq!(headers.get("Good-Header").unwrap(), "value");
+        assert_eq!(headers.get("Another").unwrap(), "ok");
+        assert!(!headers.contains_key("nBadHeaderLine"));
+        assert_eq!(idx, 50);
+    }
+}
