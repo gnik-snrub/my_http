@@ -350,4 +350,33 @@ mod tests {
         let cookies = generate_cookies(&req);
         assert!(cookies.is_empty());
     }
+
+    // percent_decoder tests
+    #[test]
+    fn decodes_basic_percent_encoding() {
+        let input = "hello%20world".to_string();
+        let decoded = percent_decoder(&input);
+        assert_eq!(decoded.unwrap(), "hello world");
+    }
+
+    #[test]
+    fn decodes_multiple_encodings() {
+        let input = "%48%65%6C%6C%6F".to_string();
+        let decoded = percent_decoder(&input);
+        assert_eq!(decoded.unwrap(), "Hello");
+    }
+
+    #[test]
+    fn ignores_invalid_percent_sequence() {
+        let input = "bad%2Gdata%".to_string();
+        let result = percent_decoder(&input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn handles_no_encodings_gracefully() {
+        let input = "cleanpath".to_string();
+        let decoded = percent_decoder(&input);
+        assert_eq!(decoded.unwrap(), "cleanpath");
+    }
 }
