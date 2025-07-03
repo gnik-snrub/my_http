@@ -101,3 +101,7 @@ async fn send_response(socket: &mut TlsStream<TcpStream>, res_bytes: Vec<u8>) {
     let _ = socket.flush();
     let _ = socket.shutdown().await;
 }
+
+#[cfg(test)]
+#[path ="tests/connection.rs"]
+mod connection_tests;
