@@ -42,13 +42,15 @@ impl Response {
 
     pub fn json<T: Serialize>(mut self, json: &T) -> Response {
         self.headers.insert("content-type".to_string(), "application/json".to_string());
-        self.body = match serde_json::to_vec(json) {
-            Ok(ok) => ok,
+        match serde_json::to_vec(json) {
+            Ok(ok) => {
+                self.body = ok;
+            },
             Err(_) => {
                 self = self.header("x-serialize-error", "true").status(StatusCode::InternalError);
-                b"{\"Error\": \"Could not serialize JSON\"}".to_vec()
+                self.body = b"{\"Error\": \"Could not serialize JSON\"}".to_vec()
             },
-        };
+        }
         self
     }
 
@@ -68,7 +70,7 @@ impl Response {
     }
 
     pub fn finalize(&mut self) -> Vec<u8> {
-        self.headers.insert("Content-Length".to_string(), self.body.len().to_string());
+        self.headers.insert("content-length".to_string(), self.body.len().to_string());
         let mut buffer = String::from("HTTP/1.1 ");
         match &self.status {
             StatusCode::Ok => {
@@ -99,3 +101,7 @@ impl Response {
         bytes
     }
 }
+
+#[cfg(test)]
+#[path ="tests/response.rs"]
+mod response_tests;
