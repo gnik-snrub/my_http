@@ -56,6 +56,7 @@ fn get_mime_type(file_name: &str) -> &str {
     mime_types.insert("css", "text/css");
     mime_types.insert("js", "application/javascript");
     mime_types.insert("png", "image/png");
+    mime_types.insert("txt", "text/plain");
 
     let file_extension = file_name.rsplit_once('.').map(|(_, ext)| ext);
     return match file_extension {
