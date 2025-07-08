@@ -28,8 +28,11 @@ use std::sync::Arc;
         .with(file_layer)
         .init();
 
-    let listener = TcpListener::bind("127.0.0.1:7878").await?;
-    println!("Listening on 127.0.0.1:7878");
+    dotenvy::dotenv().ok();
+    let address = std::env::var("BIND_ADDRESS").expect("BIND_ADDRESS not set");
+
+    println!("Listening on {:?}", &address);
+    let listener = TcpListener::bind(address).await?;
 
     let (tls_cert, tls_key) = load_certs_and_key().unwrap();
     let tls_conf = ServerConfig::builder().with_no_client_auth().with_single_cert(tls_cert, tls_key).unwrap();
