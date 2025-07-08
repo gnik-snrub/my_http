@@ -168,10 +168,7 @@ pub fn generate_cookies(req: &Request) -> HashMap<String, String>{
 
             cookies.insert(pair[0].trim().to_string(), pair[1].trim().to_string());
         });
-    } else {
-        eprintln!("Cookies header not found");
     }
-
 
     cookies
 }

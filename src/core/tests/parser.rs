@@ -26,7 +26,6 @@ fn errors_on_missing_parts() {
     let mut buf = BytesMut::new();
     buf.extend_from_slice(b"GET /missingversion\r\n\r\n");
     let result = parse_request(&buf);
-    println!("{:?}", result);
     assert!(result.is_err());
 }
 

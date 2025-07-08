@@ -25,7 +25,6 @@ pub async fn serve_file(req: &Request, res: Response) -> Response {
                 file_res
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                println!("{:?}", e);
                 res.status(StatusCode::NotFound).text(&"404 Not Found")
             }
             Err(_) => {

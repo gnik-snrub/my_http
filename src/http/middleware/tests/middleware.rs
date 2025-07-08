@@ -31,7 +31,6 @@ async fn dispatch_returns_default_response_with_no_middleware() {
     };
 
     let res = dispatcher.dispatch(req).await;
-    println!("{:?}", res);
     assert_eq!(res.status, StatusCode::NotFound);
 }
 

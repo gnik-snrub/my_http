@@ -51,8 +51,6 @@ fn json_serialization_failure_fallback() {
     let mut res = Response::new().status(StatusCode::Ok).json(&data);
     let body = String::from_utf8_lossy(&res.finalize()).into_owned();
 
-    println!("{:?}", body);
-
     assert!(body.contains("HTTP/1.1 500 Internal Error"));
     assert!(body.contains("x-serialize-error: true"));
     assert!(body.contains("{\"Error\": \"Could not serialize JSON\"}"));
