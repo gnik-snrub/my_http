@@ -49,3 +49,7 @@ impl ThreadPool {
         }
     }
 }
+
+#[cfg(test)]
+#[path ="tests/thread_pool.rs"]
+mod thread_pool_tests;
