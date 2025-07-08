@@ -62,3 +62,7 @@ pub trait Middleware: Send + Sync {
 
 type Next = Arc<dyn Fn(Request) -> ResponseFuture + Send + Sync>;
 type ResponseFuture = Pin<Box<dyn Future<Output = Response> + Send>>;
+
+#[cfg(test)]
+#[path ="tests/middleware.rs"]
+mod middleware_tests;
