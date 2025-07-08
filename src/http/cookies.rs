@@ -32,3 +32,7 @@ impl Cookie {
         result
     }
 }
+
+#[cfg(test)]
+#[path ="tests/cookies.rs"]
+mod cookies_tests;
